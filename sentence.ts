@@ -60,4 +60,14 @@ cli.command("speech")
     console.log(`Wrote ${sentence} to ${opts.output}`);
   });
 
+cli.command("split")
+  .description("Split sentence into comma-separated words")
+  .argument("<sentence>", "sentence")
+  .action(async (sentence) => {
+    const completion = await complete(
+      `Split the sentence "${sentence}" into separate words and only respond with the CSV`,
+    );
+    console.log(completion);
+  });
+
 cli.parse();
