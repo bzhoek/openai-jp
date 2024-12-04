@@ -2,6 +2,7 @@
 import { Buffer } from "node:buffer";
 import { Command } from "npm:commander";
 import OpenAI from "npm:openai";
+import {insert} from "./lib.ts";
 
 const openai = new OpenAI();
 const complete = async (prompt: string) => {
@@ -68,6 +69,12 @@ cli.command("split")
       `Split the sentence "${sentence}" into separate words and only respond with the CSV`,
     );
     console.log(completion);
+  });
+
+cli.command("insert")
+  .argument("<words>", "sentence")
+  .action(async (words) => {
+    insert(words);
   });
 
 cli.parse();
