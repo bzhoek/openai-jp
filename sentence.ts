@@ -1,31 +1,6 @@
 #!/usr/bin/env deno -W=. -E=OPENAI_API_KEY,OPENAI_BASE_URL,OPENAI_ORG_ID,OPENAI_PROJECT_ID,DEBUG -N=api.openai.com:443
-import { Buffer } from "node:buffer";
 import { Command } from "npm:commander";
-import OpenAI from "npm:openai";
-import {insert} from "./lib.ts";
-
-const openai = new OpenAI();
-const complete = async (prompt: string) => {
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { "role": "user", "content": prompt },
-    ],
-  });
-
-  return completion.choices[0].message.content;
-};
-
-const speech = async (sentence: string, output: string) => {
-  const response = await openai.audio.speech.create({
-    model: "tts-1",
-    voice: "nova",
-    input: sentence,
-  });
-
-  const buffer = Buffer.from(await response.arrayBuffer());
-  await Deno.writeFile(output, buffer);
-};
+import { complete, insert, speech } from "./lib.ts";
 
 let cli = new Command();
 cli
