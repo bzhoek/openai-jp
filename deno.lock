@@ -2,7 +2,8 @@
   "version": "4",
   "specifiers": {
     "npm:commander@*": "12.1.0",
-    "npm:openai@*": "4.67.3"
+    "npm:openai@*": "4.67.3",
+    "npm:openai@4.67.3": "4.67.3"
   },
   "npm": {
     "@types/node-fetch@2.6.11": {
