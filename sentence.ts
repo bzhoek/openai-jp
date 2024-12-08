@@ -8,7 +8,7 @@ cli
   .description("A CLI for generating Japanese sentences using OpenAI's GPT-4o")
   .version("0.0.1");
 
-cli.command("everyday")
+cli.command("daily")
   .description("An everyday short sentence")
   .argument("<word>", "word")
   .action(async (word) => {
@@ -18,12 +18,12 @@ cli.command("everyday")
     console.log(completion);
   });
 
-cli.command("memorable")
+cli.command("memo")
   .description("A memorable short sentence")
   .argument("<word>", "word")
   .action(async (word) => {
     const completion = await complete(
-      `Give a memorable short sentence in Japanese with the word ${word}`,
+      `Suggest a Japanese sentence that uses the word ${word} in a typical way`,
     );
     console.log(completion);
   });
