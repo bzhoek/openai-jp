@@ -1,5 +1,5 @@
 import OpenAI from "npm:openai";
-import { Buffer } from "node:buffer";
+import {Buffer} from "node:buffer";
 
 const openai = new OpenAI();
 
@@ -30,7 +30,7 @@ function delay() {
 }
 
 const post = async (action: string, params) => {
-  let request = {
+  const request = {
     action: action,
     version: 6,
     params: params,
@@ -44,28 +44,27 @@ const post = async (action: string, params) => {
 };
 
 async function note_info(id: string) {
-  let rsp = await post("notesInfo", { notes: [id] });
+  const rsp = await post("notesInfo", { notes: [id] });
   return rsp.result[0];
 }
 
 const find_notes = async (query: string) => {
-  let rsp = await post("findNotes", { query: query });
+  const rsp = await post("findNotes", { query: query });
   return rsp.result;
 };
 
 const find_yomi_first = async (kanji: string) => {
-  let rsp = await find_notes(
+  const rsp = await find_notes(
     `(note:OnYomi or note:KunYomi or note:Godan or note:Ichidan) kanji:${kanji}`,
   );
-  let first = rsp[0];
-  return first;
+  return rsp[0];
 };
 
 const find_yomi_note = async (kanji: string) => {
-  let rsp = await find_notes(
+  const rsp = await find_notes(
     `(note:OnYomi or note:KunYomi or note:Godan or note:Ichidan) kanji:${kanji}`,
   );
-  let first = rsp[0];
+  const first = rsp[0];
   return await note_info(first);
 };
 
@@ -74,22 +73,25 @@ const is_hiragana = (char: string) => char >= "ぁ" && char <= "わ"; // 0x3041 
 const is_katakana = (char: string) => char >= "ァ" && char <= "ワ"; // 0x30A1 to 0x30EF
 
 const is_single_kana = (word: string) => word.length === 1 && is_hiragana(word);
-const is_all_kana = (word: string) =>
-  Array.from(word).filter((ch) => is_hiragana(ch)).length === word.length;
+const is_all_kana = (word: string) => Array.from(word).filter(is_hiragana).length === word.length;
+const is_all = (word: string, filter) => Array.from(word).filter(filter).length === word.length;
+const is_all_kanji = (word: string) => is_all(word, is_kanji);
 
 export const insert = async (csv: string) => {
-  let words = csv
+  const words = csv
     .split(",")
-    .filter((word) => !is_all_kana(word));
+    .filter((word) => is_all_kanji(word));
   console.log("non-kana", words);
 
   for (const word of words) {
-    let id = await find_yomi_first(word);
+    const id = await find_yomi_first(word);
     if (id === undefined) {
       console.log(`No note found for ${word}`);
-      let hint = csv.replace(word, `(${word})`);
+      const target = csv.replace(",", "");
+      const placeholder = '・'.repeat(word.length);
+      const hint = target.replace(word, placeholder);
       console.log(`Try searching for ${hint}`);
-      let add = {
+      const add = {
         "note": {
           "deckName": "0-Inbox",
           "modelName": "OnYomi",
@@ -98,7 +100,9 @@ export const insert = async (csv: string) => {
             "kanji": word,
             "on": "json.katakana.join(', ')",
             "dictionary": "json.meanings.join(', ') + '\n' + json.hiragana.join(', ')",
-            "strokes": "css_style + svg"
+            "strokes": "css_style + svg",
+            "target": target,
+            "hint": hint
           },
           "options": {
             "allowDuplicate": false
@@ -107,9 +111,9 @@ export const insert = async (csv: string) => {
         }
       }
       console.log(add)
-      // post('addNote', add).then(json => {
-      //   console.log("added", word, json)
-      // })
+      post('addNote', add).then(json => {
+        console.log("added", word, json)
+      })
     } else {
       console.log(`Found note ${id} for ${word}`);
     }
