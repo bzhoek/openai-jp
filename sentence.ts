@@ -18,6 +18,16 @@ cli.command("daily")
     console.log(completion);
   });
 
+cli.command("kanjify")
+  .description("Rewrite with kanji")
+  .argument("<sentence>", "sentence")
+  .action(async (sentence) => {
+    const completion = await complete(
+      `rewrite with kanji ${sentence}`,
+    );
+    console.log(completion);
+  });
+
 cli.command("memo")
   .description("A memorable short sentence")
   .argument("<word>", "word")
