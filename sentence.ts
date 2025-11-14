@@ -9,6 +9,27 @@ cli
   .version("0.0.1");
 
 const additional = `Use one line for the sentence and one line for the translation.`
+
+cli.command("it")
+  .description("Intransitive pair of verb")
+  .argument("<verb>", "verb")
+  .action(async (verb) => {
+    const completion = await complete(
+      `beantwoord kort of er een intransitieve tegenhanger van ${verb} bestaat`,
+    );
+    console.log(completion);
+  });
+
+cli.command("tt")
+  .description("Transitive pair of verb")
+  .argument("<verb>", "verb")
+  .action(async (verb) => {
+    const completion = await complete(
+      `beantwoord kort of er een transitieve tegenhanger van ${verb} bestaat`,
+    );
+    console.log(completion);
+  });
+
 cli.command("daily")
   .description("An everyday short sentence")
   .argument("<word>", "word")
