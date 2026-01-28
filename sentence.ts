@@ -15,7 +15,7 @@ cli.command("it")
   .argument("<verb>", "verb")
   .action(async (verb) => {
     const completion = await complete(
-      `beantwoord kort of er een intransitieve tegenhanger van ${verb} bestaat`,
+      `beantwoord met ja of nee of er een 自動詞 van ${verb} bestaat en wat dat woord is`,
     );
     console.log(completion);
   });
@@ -25,7 +25,7 @@ cli.command("tt")
   .argument("<verb>", "verb")
   .action(async (verb) => {
     const completion = await complete(
-      `beantwoord kort of er een transitieve tegenhanger van ${verb} bestaat`,
+      `beantwoord met ja of nee of er een 他動詞 van ${verb} bestaat en wat dat woord is`,
     );
     console.log(completion);
   });
