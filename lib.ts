@@ -1,5 +1,6 @@
 import OpenAI from "npm:openai";
 import {Buffer} from "node:buffer";
+import {delay} from "jsr:@std/async/delay";
 
 const openai = new OpenAI();
 
@@ -25,8 +26,24 @@ export const speech = async (sentence: string, output: string) => {
   await Deno.writeFile(output, buffer);
 };
 
-function delay() {
-  return new Promise((resolve) => setTimeout(resolve, 300));
+export const anki_post = async (action: string, params: { query: string; }, retries = 3, delay_ms = 1000) => {
+  let request = {
+    action: action,
+    version: 6,
+    params: params
+  }
+
+  // console.debug(request)
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      let res = await fetch('http://127.0.0.1:8765', {method: 'post', body: JSON.stringify(request)})
+      return res.json()
+    } catch (err) {
+      console.warn(`${err} encountered. Retry ${attempt}/${retries}...`);
+      await delay(delay_ms);
+    }
+  }
 }
 
 const post = async (action: string, params) => {

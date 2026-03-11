@@ -1,9 +1,15 @@
 {
-  "version": "4",
+  "version": "5",
   "specifiers": {
+    "jsr:@std/async@*": "1.2.0",
     "npm:commander@*": "12.1.0",
     "npm:openai@*": "4.67.3",
     "npm:openai@4.67.3": "4.67.3"
+  },
+  "jsr": {
+    "@std/async@1.2.0": {
+      "integrity": "c059c6f6d95ca7cc012ae8e8d7164d1697113d54b0b679e4372b354b11c2dee5"
+    }
   },
   "npm": {
     "@types/node-fetch@2.6.11": {
@@ -92,12 +98,16 @@
       "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="
     },
     "node-domexception@1.0.0": {
-      "integrity": "sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ=="
+      "integrity": "sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==",
+      "deprecated": true
     },
     "node-fetch@2.7.0": {
       "integrity": "sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==",
       "dependencies": [
         "whatwg-url"
+      ],
+      "optionalPeers": [
+        "encoding@^0.1.0"
       ]
     },
     "openai@4.67.3": {
@@ -110,7 +120,11 @@
         "form-data-encoder",
         "formdata-node",
         "node-fetch"
-      ]
+      ],
+      "optionalPeers": [
+        "zod@^3.23.8"
+      ],
+      "bin": true
     },
     "tr46@0.0.3": {
       "integrity": "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="

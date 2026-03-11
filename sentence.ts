@@ -1,7 +1,7 @@
 #!/usr/bin/env deno -W=. -E=OPENAI_API_KEY,OPENAI_BASE_URL,OPENAI_ORG_ID,OPENAI_PROJECT_ID,DEBUG -N=api.openai.com:443,127.0.0.1:8765
 
 import { Command } from "npm:commander";
-import { complete, insert, speech } from "./lib.ts";
+import { anki_post, complete, insert, speech } from "./lib.ts";
 
 let cli = new Command();
 cli
@@ -60,22 +60,22 @@ cli.command("simple")
     console.log(completion);
   });
 
+
+cli.command("query")
+  .description("A simple sentence")
+  .argument("<query>", "word")
+  .action(async (query) => {
+    let ids = await anki_post('findNotes', {query: query});
+
+    console.log(ids);
+  });
+
 cli.command("kanjify")
   .description("Rewrite with kanji")
   .argument("<sentence>", "sentence")
   .action(async (sentence) => {
     const completion = await complete(
       `rewrite with kanji ${sentence}`,
-    );
-    console.log(completion);
-  });
-
-cli.command("memo")
-  .description("A memorable short sentence")
-  .argument("<word>", "word")
-  .action(async (word) => {
-    const completion = await complete(
-      `Suggest a Japanese sentence in kanji that uses the word ${word} in a typical way. ${additional}`,
     );
     console.log(completion);
   });
