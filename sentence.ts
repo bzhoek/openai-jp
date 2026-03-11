@@ -35,7 +35,27 @@ cli.command("daily")
   .argument("<word>", "word")
   .action(async (word) => {
     const completion = await complete(
-      `Give an everyday short sentence in Japanese kanji that uses the word ${word}. ${additional}`,
+      `Give an everyday short sentence (without pronouns) in Japanese kanji that uses the word ${word} in a common way. ${additional}`,
+    );
+    console.log(completion);
+  });
+
+cli.command("memo")
+  .description("A memorable short sentence")
+  .argument("<word>", "word")
+  .action(async (word) => {
+    const completion = await complete(
+      `Suggest a short and memorable Japanese sentence (without pronouns) with kanji that uses the word ${word} in a typical way. ${additional}`,
+    );
+    console.log(completion);
+  });
+
+cli.command("simple")
+  .description("A simple sentence")
+  .argument("<word>", "word")
+  .action(async (word)=> {
+    const completion = await complete(
+      `Give a short example sentence (without pronouns) in simple Japanese with kanji for the word: ${word}. ${additional}`,
     );
     console.log(completion);
   });
