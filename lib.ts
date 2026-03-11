@@ -1,6 +1,7 @@
 import OpenAI from "npm:openai";
 import {Buffer} from "node:buffer";
 import {delay} from "jsr:@std/async/delay";
+import {Semaphore} from "jsr:@std/async/unstable-semaphore";
 
 const openai = new OpenAI();
 
@@ -26,7 +27,8 @@ export const speech = async (sentence: string, output: string) => {
   await Deno.writeFile(output, buffer);
 };
 
-export const anki_post = async (action: string, params: { query: string; }, retries = 3, delay_ms = 1000) => {
+const semaphore = new Semaphore(2);
+export const anki_post = async (action: string, params: any, retries = 3, delay_ms = 1000) => {
   let request = {
     action: action,
     version: 6,
@@ -34,6 +36,7 @@ export const anki_post = async (action: string, params: { query: string; }, retr
   }
 
   // console.debug(request)
+  await semaphore.acquire();
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -42,6 +45,8 @@ export const anki_post = async (action: string, params: { query: string; }, retr
     } catch (err) {
       console.warn(`${err} encountered. Retry ${attempt}/${retries}...`);
       await delay(delay_ms);
+    } finally {
+      semaphore.release();
     }
   }
 }
