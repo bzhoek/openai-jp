@@ -54,20 +54,37 @@ cli.command("simple")
   .description("A simple sentence")
   .argument("<word>", "word")
   .action(async (word)=> {
-    const completion = await complete(
-      `Give a short example sentence (without pronouns) in simple Japanese with kanji for the word: ${word}. ${additional}`,
-    );
+    const completion = await simple_sentence(word);
     console.log(completion);
   });
 
+const simple_sentence = (word: string) => complete(
+  `Give a short example sentence (without pronouns) in simple Japanese with kanji for the word: ${word}. ${additional}`,
+);
 
-cli.command("query")
-  .description("A simple sentence")
-  .argument("<query>", "word")
+cli.command("generate")
+  .description("Generate simple target sentence with description in details")
+  .argument("<query>", "query")
   .action(async (query) => {
-    let ids = await anki_post('findNotes', {query: query});
-
-    console.log(ids);
+    const ids = await anki_post('findNotes', {query: query});
+    const notes = await anki_post("notesInfo", {notes: ids.result});
+    const results = notes.result.map((note: any) =>
+      Object.assign({}, {id: note.noteId, kanji: note.fields.kanji.value, details: note.fields.details.value}),
+    );
+    console.log(results);
+    for(const result of results) {
+      const completion = await simple_sentence(result.kanji);
+      const lines = completion.replace('。', '').split("\n");
+      const changes = {
+        note: {
+          id: result.id,
+          fields: {target: lines[0], details: result.details + lines[0] + '<br>' + lines[1]}
+        }
+      };
+      console.log(changes);
+      const update = await anki_post('updateNote', changes)
+      console.log(update);
+    }
   });
 
 cli.command("kanjify")
