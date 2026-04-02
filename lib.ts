@@ -28,7 +28,12 @@ export const speech = async (sentence: string, output: string) => {
 };
 
 const semaphore = new Semaphore(2);
-export const anki_post = async (action: string, params: any, retries = 3, delay_ms = 1000) => {
+export const anki_post = async (action: string, params: any, noop = false, retries = 3, delay_ms = 1000) => {
+  if (noop) {
+    console.log(`No-op "${action}" with params ${JSON.stringify(params)}`);
+    return;
+  }
+
   let request = {
     action: action,
     version: 6,
