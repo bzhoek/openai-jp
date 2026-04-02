@@ -152,17 +152,24 @@ cli.command("translate")
         console.log(`Overwriting ${result.id} with translation "${dd}"`)
       }
 
-      const translation = await complete(
-        `Vertaal in het Nederlands in één beknopte zin: ${result.target}`,
-      );
       const changes = {
         note: {
           id: result.id,
-          fields: {
-            target: `<dl><dt>${dt}</dt><dd>${translation}</dd></dl>`
-          },
+          fields: {},
         },
       };
+      let details = result.details.split("<br>")
+      let translation = "";
+      if (result.details.startsWith(dd) && details.length === 2) {
+        translation = result.details.split("<br>")[1];
+        Object.assign(changes.note.fields, {details: ""});
+      } else {
+        translation = await complete(
+          `Vertaal in het Nederlands in één beknopte zin: ${result.target}`,
+        );
+      }
+
+      Object.assign(changes.note.fields, {target: `<dl><dt>${dt}</dt><dd>${translation}</dd></dl>`});
       console.log(changes);
       const update = await anki_post("updateNote", changes);
       console.log(update);
