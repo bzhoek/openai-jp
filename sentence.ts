@@ -1,7 +1,8 @@
-#!/usr/bin/env deno -W=. -E=OPENAI_API_KEY,OPENAI_BASE_URL,OPENAI_ORG_ID,OPENAI_PROJECT_ID,DEBUG -N=api.openai.com:443,127.0.0.1:8765
+#!/usr/bin/env deno -W=. -E=OPENAI_API_KEY,OPENAI_BASE_URL,OPENAI_ORG_ID,OPENAI_PROJECT_ID,OPENAI_WEBHOOK_SECRET,OPENAI_LOG,DEBUG -N=api.openai.com:443,127.0.0.1:8765
 
-import { Command } from "npm:commander";
-import { anki_post, complete, insert, speech } from "./lib.ts";
+import {Command} from "npm:commander";
+import {complete, insert, speech} from "./lib.ts";
+import {generate, hint, translate} from "./actions.ts";
 
 const cli = new Command();
 cli
@@ -58,148 +59,28 @@ cli.command("simple")
     console.log(completion);
   });
 
-const simple_sentence = (word: string) => complete(
+export const simple_sentence = (word: string) => complete(
   `Geef in eenvoudig Japans een herkenbare en specifieke voorbeeldzin, zonder persoonlijk voornaamwoord, met het woord: ${word}. Gebruik één regel voor de Japanse zin en één regel voor de Nederlandse vertaling.`,
 );
 
 cli.command("generate")
   .description("Generate simple target sentence with description in details")
   .argument("<query>", "query")
-  .action(async (query) => {
-    const ids = await anki_post("findNotes", { query: query });
-    const notes = await anki_post("notesInfo", { notes: ids.result });
-    const results = notes.result.map((note: any) =>
-      Object.assign({}, {
-        id: note.noteId,
-        kanji: note.fields.kanji.value,
-        details: note.fields.details.value,
-      })
-    );
-    console.log(results);
-    for (const result of results) {
-      const completion = await simple_sentence(result.kanji);
-      const lines = completion.replace("。", "").split("\n");
-      const changes = {
-        note: {
-          id: result.id,
-          fields: {
-            target: lines[0],
-            details: result.details + lines[0] + "<br>" + lines[1],
-          },
-        },
-      };
-      console.log(changes);
-      const update = await anki_post("updateNote", changes);
-      console.log(update);
-    }
-  });
-
-function fields(note: any, ...names: string[]) {
-  let result: any = Object.assign({}, { id: note.noteId });
-  for (const name of names) {
-    result[name] = note.fields[name].value;
-  }
-  return result;
-}
-
-async function anki_query(query: string, ...names: string[]) {
-  const ids = await anki_post("findNotes", { query: query });
-  const notes = await anki_post("notesInfo", { notes: ids.result });
-  return notes.result.map((note) => {
-    let result: any = Object.assign({}, { id: note.noteId });
-    for (const name of names) {
-      result[name] = note.fields[name].value;
-    }
-    return result;
-  });
-}
-
-import {Document, DOMParser} from "npm:@xmldom/xmldom";
-import xpath from "npm:xpath";
-
-function descriptionList(value: string): Document {
-  let xml: string  = value
-  if(!xml.startsWith("<dl>")) {
-    xml = `<dl><dt>${xml}</dt></dl>`;
-  }
-  console.log(xml);
-  return new DOMParser().parseFromString(xml, "text/xml");
-}
-
-function textContent(exp: string, doc: Document): string {
-  const nodes: [Node] = xpath.select(exp, doc);
-  return nodes.map((node) => node.textContent)[0] ?? "";
-}
+  .action(generate);
 
 cli.command("translate")
   .description("Add translation to details")
   .option("-f, --force", "Overwrite existing translation")
   .option("-n, --noop", "Non-destructive dry-run")
   .argument("<query>", "query")
-  .action(async (query, options) => {
-    const results = await anki_query(query, "target", "details");
-    console.log(results);
-
-    for (const result of results) {
-      const doc = descriptionList(result.target);
-      const dt = textContent("/dl/dt", doc);
-      const dd = textContent("/dl/dd", doc);
-      console.log(dt, dd);
-      if (dd.length > 1) {
-        if (!options.force) {
-          console.log(`Skipping ${result.id} with translation "${dd}"`)
-          continue
-        }
-        console.log(`Overwriting ${result.id} with translation "${dd}"`)
-      }
-
-      const changes = {
-        note: {
-          id: result.id,
-          fields: {},
-        },
-      };
-      const details = result.details.split("<br>")
-      let translation = "";
-      if (result.details.startsWith(dd) && details.length === 2) {
-        translation = result.details.split("<br>")[1];
-        Object.assign(changes.note.fields, {details: ""});
-      } else {
-        translation = await complete(
-          `Vertaal in het Nederlands in één beknopte zin: ${result.target}`,
-        ) ?? "";
-      }
-
-      Object.assign(changes.note.fields, {target: `<dl><dt>${dt}</dt><dd>${translation}</dd></dl>`});
-      console.log(changes);
-      const update = await anki_post("updateNote", changes, options.noop);
-      console.log(update);
-    }
-  });
+  .action(translate);
 
 cli.command("hint")
   .description("Create hint from target")
   .option("-f, --force", "Overwrite existing hint")
   .option("-n, --noop", "Non-destructive dry-run")
   .argument("<query>", "query")
-  .action(async (query, options) => {
-    const results = await anki_query(query, "kanji", "target", "hint");
-    console.log(results);
-
-    for (const result of results) {
-      const doc = descriptionList(result.target);
-      const dt = textContent("/dl/dt", doc);
-
-      if (dt.length > 0 && (result.hint.length === 0 || options.force)) {
-        const placeholder = '・'.repeat(result.kanji.length);
-        const hint = dt.replace(result.kanji, placeholder).replace(/<i>.*/g, '').trim();
-        console.log(result.kanji, "hint: ", hint);
-        const changes = {note: {id: result.id, fields: {hint: hint}}};
-        console.log(changes);
-        await anki_post('updateNote', changes, options.noop)
-      }
-    }
-  });
+  .action(hint);
 
 cli.command("kanjify")
   .description("Rewrite with kanji")

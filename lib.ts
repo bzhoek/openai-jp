@@ -1,9 +1,22 @@
+// deno-lint-ignore-file
 import OpenAI from "npm:openai";
 import {Buffer} from "node:buffer";
 import {delay} from "jsr:@std/async/delay";
 import {Semaphore} from "jsr:@std/async/unstable-semaphore";
 
 const openai = new OpenAI();
+
+export async function anki_query(query: string, ...names: string[]) {
+  const ids = await anki_post("findNotes", { query: query });
+  const notes = await anki_post("notesInfo", { notes: ids.result });
+  return notes.result.map((note) => {
+    let result: any = Object.assign({}, { id: note.noteId });
+    for (const name of names) {
+      result[name] = note.fields[name].value;
+    }
+    return result;
+  });
+}
 
 export const complete = async (prompt: string) => {
   const completion = await openai.chat.completions.create({
@@ -56,7 +69,7 @@ export const anki_post = async (action: string, params: any, noop = false, retri
   }
 }
 
-const post = async (action: string, params) => {
+const post = async (action: string, params: any) => {
   const request = {
     action: action,
     version: 6,
