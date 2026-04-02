@@ -126,14 +126,15 @@ function descriptionList(value: string): Document {
   return new DOMParser().parseFromString(xml, "text/xml");
 }
 
-function textContent(exp: string, doc: Document): [string] {
+function textContent(exp: string, doc: Document): string {
   const nodes: [Node] = xpath.select(exp, doc);
-  return nodes.map((node) => node.textContent)
+  return nodes.map((node) => node.textContent)[0] ?? "";
 }
 
 cli.command("translate")
   .description("Add translation to details")
   .option("-f, --force", "Overwrite existing translation")
+  .option("-n, --noop", "Non-destructive dry-run")
   .argument("<query>", "query")
   .action(async (query, options) => {
     const results = await anki_query(query, "target", "details");
@@ -144,7 +145,7 @@ cli.command("translate")
       const dt = textContent("/dl/dt", doc);
       const dd = textContent("/dl/dd", doc);
       console.log(dt, dd);
-      if (dd.length == 1) {
+      if (dd.length > 1) {
         if (!options.force) {
           console.log(`Skipping ${result.id} with translation "${dd}"`)
           continue
@@ -158,7 +159,7 @@ cli.command("translate")
           fields: {},
         },
       };
-      let details = result.details.split("<br>")
+      const details = result.details.split("<br>")
       let translation = "";
       if (result.details.startsWith(dd) && details.length === 2) {
         translation = result.details.split("<br>")[1];
@@ -166,13 +167,37 @@ cli.command("translate")
       } else {
         translation = await complete(
           `Vertaal in het Nederlands in één beknopte zin: ${result.target}`,
-        );
+        ) ?? "";
       }
 
       Object.assign(changes.note.fields, {target: `<dl><dt>${dt}</dt><dd>${translation}</dd></dl>`});
       console.log(changes);
-      const update = await anki_post("updateNote", changes);
+      const update = await anki_post("updateNote", changes, options.noop);
       console.log(update);
+    }
+  });
+
+cli.command("hint")
+  .description("Create hint from target")
+  .option("-f, --force", "Overwrite existing hint")
+  .option("-n, --noop", "Non-destructive dry-run")
+  .argument("<query>", "query")
+  .action(async (query, options) => {
+    const results = await anki_query(query, "kanji", "target", "hint");
+    console.log(results);
+
+    for (const result of results) {
+      const doc = descriptionList(result.target);
+      const dt = textContent("/dl/dt", doc);
+
+      if (dt.length > 0 && (result.hint.length === 0 || options.force)) {
+        const placeholder = '・'.repeat(result.kanji.length);
+        const hint = dt.replace(result.kanji, placeholder).replace(/<i>.*/g, '').trim();
+        console.log(result.kanji, "hint: ", hint);
+        const changes = {note: {id: result.id, fields: {hint: hint}}};
+        console.log(changes);
+        await anki_post('updateNote', changes, options.noop)
+      }
     }
   });
 
