@@ -2,7 +2,7 @@
 
 import {Command} from "npm:commander";
 import {complete, insert, speech} from "./lib.ts";
-import {generate, hint, translate} from "./actions.ts";
+import {generate, hint, onyomi, translate} from "./actions.ts";
 
 const cli = new Command();
 cli
@@ -81,6 +81,13 @@ cli.command("hint")
   .option("-n, --noop", "Non-destructive dry-run")
   .argument("<query>", "query")
   .action(hint);
+
+cli.command("onyomi")
+  .description("Convert hiragana to katakana")
+  .option("-f, --force", "Overwrite existing hint")
+  .option("-n, --noop", "Non-destructive dry-run")
+  .argument("<query>", "query")
+  .action(onyomi);
 
 cli.command("kanjify")
   .description("Rewrite with kanji")

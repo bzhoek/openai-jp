@@ -1,44 +1,9 @@
-// deno-lint-ignore-file
 import OpenAI from "npm:openai";
 import {Buffer} from "node:buffer";
 import {delay} from "jsr:@std/async/delay";
 import {Semaphore} from "jsr:@std/async/unstable-semaphore";
 
 const openai = new OpenAI();
-
-export async function anki_query(query: string, ...names: string[]) {
-  const ids = await anki_post("findNotes", { query: query });
-  const notes = await anki_post("notesInfo", { notes: ids.result });
-  return notes.result.map((note) => {
-    let result: any = Object.assign({}, { id: note.noteId });
-    for (const name of names) {
-      result[name] = note.fields[name].value;
-    }
-    return result;
-  });
-}
-
-export const complete = async (prompt: string) => {
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { "role": "user", "content": prompt },
-    ],
-  });
-
-  return completion.choices[0].message.content;
-};
-
-export const speech = async (sentence: string, output: string) => {
-  const response = await openai.audio.speech.create({
-    model: "tts-1",
-    voice: "nova",
-    input: sentence,
-  });
-
-  const buffer = Buffer.from(await response.arrayBuffer());
-  await Deno.writeFile(output, buffer);
-};
 
 const semaphore = new Semaphore(2);
 export const anki_post = async (action: string, params: any, noop = false, retries = 3, delay_ms = 1000) => {
@@ -69,7 +34,68 @@ export const anki_post = async (action: string, params: any, noop = false, retri
   }
 }
 
-const post = async (action: string, params: any) => {
+export async function anki_query(query: string, ...names: string[]) {
+  const ids = await anki_post("findNotes", { query: query });
+  const notes = await anki_post("notesInfo", { notes: ids.result });
+  return notes.result.map((note) => {
+    let result: any = Object.assign({}, { id: note.noteId });
+    for (const name of names) {
+      result[name] = note.fields[name].value.trim();
+    }
+    return result;
+  });
+}
+
+export const complete = async (prompt: string) => {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      { "role": "user", "content": prompt },
+    ],
+  });
+
+  return completion.choices[0].message.content;
+};
+
+export const is_jukugo = (word) => {
+  let clean = word.split(".")[0].trim()
+
+  let kanji = Array.from(clean)
+    .filter(ch => is_kanji(ch))
+
+  if (kanji.length === 1) { // single kanji is kun
+    return false
+  }
+
+  return Array.from(clean)
+    .filter(ch => is_hiragana(ch))
+    .length === 0
+}
+
+export const speech = async (sentence: string, output: string) => {
+  const response = await openai.audio.speech.create({
+    model: "tts-1",
+    voice: "nova",
+    input: sentence,
+  });
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  await Deno.writeFile(output, buffer);
+};
+
+export const to_katakana = (word: string): string => {
+  return Array.from(word)
+    .map(ch => {
+      let c = ch.charCodeAt(0);
+      if (c >= 0x3040 && c <= 0x309f) {
+        return String.fromCharCode(c + 96)
+      } else {
+        return ch
+      }
+    }).join('')
+}
+
+const post = async (action: string, params) => {
   const request = {
     action: action,
     version: 6,

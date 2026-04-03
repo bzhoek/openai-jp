@@ -1,7 +1,13 @@
 // deno-lint-ignore-file no-explicit-any
-import {anki_post, anki_query, complete} from "./lib.ts";
+import {
+  anki_post,
+  anki_query,
+  complete,
+  is_jukugo,
+  to_katakana,
+} from "./lib.ts";
 import { descriptionList, textContent } from "./dom.ts";
-import {simple_sentence} from "./sentence.ts";
+import { simple_sentence } from "./sentence.ts";
 
 export const generate = async (query: string) => {
   const ids = await anki_post("findNotes", { query: query });
@@ -46,6 +52,23 @@ export const hint = async (query: string, options: any) => {
         .trim();
       console.log(result.kanji, "hint: ", hint);
       const changes = { note: { id: result.id, fields: { hint: hint } } };
+      console.log(changes);
+      await anki_post("updateNote", changes, options.noop);
+    }
+  }
+};
+
+export const onyomi = async (query: string, options: any) => {
+  const results = await anki_query(query, "kana", "kanji");
+  console.log(results);
+
+  for (const result of results) {
+    if (!is_jukugo(result.kanji)) {
+      continue
+    }
+    let katakana = to_katakana(result.kana);
+    if (katakana != result.kana || options.force) {
+      const changes = { note: { id: result.id, fields: { kana: katakana } } };
       console.log(changes);
       await anki_post("updateNote", changes, options.noop);
     }
