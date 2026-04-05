@@ -27,8 +27,7 @@ export const generate = async (query: string) => {
       note: {
         id: result.id,
         fields: {
-          target: lines[0],
-          details: result.details + lines[0] + "<br>" + lines[1],
+          target: `<dl><dt>${lines[0].trim()}</dt><dd>${lines[1]}</dd></dl>`,
         },
       },
     };
@@ -40,11 +39,14 @@ export const generate = async (query: string) => {
 
 export const hint = async (query: string, options: any) => {
   const results = await anki_query(query, "kanji", "target", "hint");
-  console.log(results);
 
   for (const result of results) {
     const doc = descriptionList(result.target);
-    const dt = textContent("/dl/dt", doc);
+    if (doc === undefined) {
+      continue;
+    }
+
+    let dt = textContent("/dl/dt", doc);
 
     if (dt.length > 0 && (result.hint.length === 0 || options.force)) {
       const placeholder = "・".repeat(result.kanji.length);
@@ -60,7 +62,6 @@ export const hint = async (query: string, options: any) => {
 
 export const onyomi = async (query: string, options: any) => {
   const results = await anki_query(query, "kana", "kanji");
-  console.log(results);
 
   for (const result of results) {
     if (!is_jukugo(result.kanji)) {
@@ -77,10 +78,13 @@ export const onyomi = async (query: string, options: any) => {
 
 export const translate = async (query: string, options: any) => {
   const results = await anki_query(query, "target", "details");
-  console.log(results);
 
   for (const result of results) {
     const doc = descriptionList(result.target);
+    if (doc === undefined) {
+      continue;
+    }
+
     const dt = textContent("/dl/dt", doc);
     const dd = textContent("/dl/dd", doc);
     console.log(dt, dd);
