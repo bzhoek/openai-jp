@@ -100,10 +100,11 @@ export const translate = async (query: string, options: any) => {
     };
     const details = result.details.split("<br>")
     let translation = "";
-    if (result.details.startsWith(dd) && details.length === 2) {
+    if (result.details.startsWith(dd) && details.length >= 2) {
       translation = result.details.split("<br>")[1];
       Object.assign(changes.note.fields, {details: ""});
     } else {
+      console.error("Cannot use details", result.id, result.details);
       translation = await complete(
         `Vertaal in het Nederlands in één beknopte zin: ${result.target}`,
       ) ?? "";
