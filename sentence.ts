@@ -18,8 +18,8 @@ function query_apply(cli: Command, command: string, description: string, action:
     .action(action)
 }
 
-query_apply(cli, "generate", "Generate target sentence as definition list for matching notes", generate);
-query_apply(cli, "translate", "Add translation to details", translate);
+query_apply(cli, "generate", "Generate target sentence as definition list", generate);
+query_apply(cli, "translate", "Add translation to target as definition", translate);
 query_apply(cli, "hint", "Create hint from target", hint);
 query_apply(cli, "onyomi", "Convert hiragana to katakana", onyomi);
 

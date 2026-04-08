@@ -42,7 +42,7 @@ export async function anki_query(query: string, ...names: string[]) {
   const ids = await anki_post("findNotes", { query: query });
   const notes = await anki_post("notesInfo", { notes: ids.result });
   const results = notes.result.map((note) => {
-    let result: any = Object.assign({}, { id: note.noteId });
+    const result: any = Object.assign({}, { id: note.noteId });
     for (const name of names) {
       result[name] = note.fields[name].value.trim();
     }
@@ -53,6 +53,7 @@ export async function anki_query(query: string, ...names: string[]) {
 }
 
 export const complete = async (prompt: string) => {
+  // Allowed models https://platform.openai.com/ Project, Limits, but gpt-5-mini is much slower
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
