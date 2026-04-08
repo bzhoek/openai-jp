@@ -24,7 +24,11 @@ export const anki_post = async (action: string, params: any, noop = false, retri
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       let res = await fetch('http://127.0.0.1:8765', {method: 'post', body: JSON.stringify(request)})
-      return res.json()
+      let json = await res.json();
+      if (json.error) {
+        console.error(json.error);
+      }
+      return json;
     } catch (err) {
       console.warn(`${err} encountered. Retry ${attempt}/${retries}...`);
       await delay(delay_ms);
