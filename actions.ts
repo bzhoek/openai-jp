@@ -1,25 +1,31 @@
 // deno-lint-ignore-file no-explicit-any
-import {
-  anki_post,
-  anki_query,
-  complete,
-  is_jukugo,
-  to_katakana,
-} from "./lib.ts";
-import { descriptionList, textContent } from "./dom.ts";
-import { simple_sentence } from "./sentence.ts";
+import {anki_post, anki_query, complete, is_jukugo, to_katakana,} from "./lib.ts";
+import {dl, extractXPaths} from "./dom.ts";
+import {simple_sentence} from "./sentence.ts";
 
 export type ApplyOptions = {
   force: boolean;
   noop: boolean;
 };
 
-export const generate = async (query: string, options: ApplyOptions) => {
+export const generate_speech = async (query: string, options: any) => {
+  const results = await anki_query(query, "target", "context");
+
+  for (const result of results) {
+    const doc = extractXPaths(dl(result.target), {dt: "/dl/dt"});
+    console.log(doc);
+    if (doc === undefined) {
+      continue;
+    }
+  }
+}
+
+export const generate_target = async (query: string, options: ApplyOptions) => {
   const results = await anki_query(query, "kanji", "target");
   for (const result of results) {
-    const doc = descriptionList(result.target);
-    if (doc && textContent("/dl/dd", doc).length > 1) {
-      if(!options.force) {
+    const doc = extractXPaths(dl(result.target), {dd: "/dl/dd"});
+    if (doc && doc.dd.length > 1) {
+      if (!options.force) {
         console.log("Skipping existing target:", result.target);
         continue;
       }
@@ -45,19 +51,19 @@ export const hint = async (query: string, options: any) => {
   const results = await anki_query(query, "kanji", "target", "hint");
 
   for (const result of results) {
-    const doc = descriptionList(result.target);
+    const doc = extractXPaths(dl(result.target), {dt: "/dl/dt"});
     if (doc === undefined) {
+      console.error("Cannot parse:", result.target);
       continue;
     }
 
-    let dt = textContent("/dl/dt", doc);
-    if (dt.length > 0 && (result.hint.length === 0 || options.force)) {
+    if (doc.dt.length > 0 && (result.hint.length === 0 || options.force)) {
       const placeholder = "・".repeat(result.kanji.length);
-      const hint = dt.replace(result.kanji, placeholder).replace(/<i>.*/g, "")
+      const hint = doc.dt.replace(result.kanji, placeholder).replace(/<i>.*/g, "")
         .trim();
-      console.log(result.kanji, "hint: ", hint);
+      console.log("kanji:", result.kanji, "hint: ", hint);
       const changes = { note: { id: result.id, fields: { hint: hint } } };
-      console.log(changes);
+      console.log("changes:", changes);
       await anki_post("updateNote", changes, options.noop);
     }
   }
@@ -83,20 +89,18 @@ export const translate = async (query: string, options: any) => {
   const results = await anki_query(query, "target", "details");
 
   for (const result of results) {
-    const doc = descriptionList(result.target);
+    const doc = extractXPaths(dl(result.target), {dt: "/dl/dt", dd: "/dl/dd"});
     if (doc === undefined) {
       continue;
     }
 
-    const dt = textContent("/dl/dt", doc);
-    const dd = textContent("/dl/dd", doc);
-    console.log(dt, dd);
-    if (dd.length > 1) {
+    console.log(doc);
+    if (doc.dd.length > 1) {
       if (!options.force) {
-        console.log(`Skipping ${result.id} with translation "${dd}"`)
+        console.log(`Skipping ${result.id} with translation "${doc.dd}"`)
         continue
       }
-      console.log(`Overwriting ${result.id} with translation "${dd}"`)
+      console.log(`Overwriting ${result.id} with translation "${doc.dd}"`)
     }
 
     const changes = {
@@ -107,7 +111,7 @@ export const translate = async (query: string, options: any) => {
     };
     const details = result.details.split("<br>")
     let translation = "";
-    if (result.details.startsWith(dd) && details.length >= 2) {
+    if (result.details.startsWith(doc.dd) && details.length >= 2) {
       translation = result.details.split("<br>")[1];
       Object.assign(changes.note.fields, {details: ""});
     } else {
@@ -117,7 +121,7 @@ export const translate = async (query: string, options: any) => {
       ) ?? "";
     }
 
-    Object.assign(changes.note.fields, {target: `<dl><dt>${dt}</dt><dd>${translation}</dd></dl>`});
+    Object.assign(changes.note.fields, {target: `<dl><dt>${doc.dt}</dt><dd>${translation}</dd></dl>`});
     console.log(changes);
     const update = await anki_post("updateNote", changes, options.noop);
     console.log(update);

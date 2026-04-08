@@ -2,7 +2,7 @@
 
 import {Command} from "npm:commander";
 import {complete, insert, speech} from "./lib.ts";
-import {ApplyOptions, generate, hint, onyomi, translate} from "./actions.ts";
+import {ApplyOptions, generate_speech, generate_target, hint, onyomi, translate} from "./actions.ts";
 
 const cli = new Command();
 cli
@@ -18,10 +18,11 @@ function query_apply(cli: Command, command: string, description: string, action:
     .action(action)
 }
 
-query_apply(cli, "generate", "Generate target sentence as definition list", generate);
-query_apply(cli, "translate", "Add translation to target as definition", translate);
+query_apply(cli, "generate", "Generate target sentence as definition list", generate_target);
 query_apply(cli, "hint", "Create hint from target", hint);
 query_apply(cli, "onyomi", "Convert hiragana to katakana", onyomi);
+query_apply(cli, "speech", "Add speech from target in context", generate_speech);
+query_apply(cli, "translate", "Add translation to target as definition", translate);
 
 const additional = `Use one line for the sentence and one line for the translation.`;
 
@@ -88,7 +89,7 @@ cli.command("kanjify")
     console.log(completion);
   });
 
-cli.command("speech")
+cli.command("tts")
   .description("Save sentence as audio")
   .argument("<sentence>", "sentence")
   .requiredOption("-o, --output <file>", "output file")

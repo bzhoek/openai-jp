@@ -1,13 +1,21 @@
-import { Document, DOMParser } from "npm:@xmldom/xmldom";
+import {Document, DOMParser} from "npm:@xmldom/xmldom";
 import xpath from "npm:xpath";
 
-export function descriptionList(value: string): Document | undefined {
-  let xml: string = value;
-  if (!xml.startsWith("<dl>")) {
-    xml = `<dl><dt>${xml}</dt></dl>`;
+export function dl(value: string): string {
+  if (value.startsWith("<dl>")) {
+    return value;
   }
+  return `<dl><dt>${value}</dt></dl>`;
+}
+
+export function extractXPaths(xml: string, keys: any): any | undefined {
   try {
-    return new DOMParser().parseFromString(xml, "text/xml");
+    const doc =  new DOMParser().parseFromString(xml, "text/xml");
+    const result = {};
+    for (const [key, value] of Object.entries(keys)) {
+      Object.assign(result, { [key]: textContent(value, doc) });
+    }
+    return result;
   } catch (e) {
     console.error(xml, e.message || e);
     return undefined;
