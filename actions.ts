@@ -9,7 +9,12 @@ import {
 import { descriptionList, textContent } from "./dom.ts";
 import { simple_sentence } from "./sentence.ts";
 
-export const generate = async (query: string, options: any) => {
+export type ApplyOptions = {
+  force: boolean;
+  noop: boolean;
+};
+
+export const generate = async (query: string, options: ApplyOptions) => {
   const results = await anki_query(query, "kanji", "target");
   for (const result of results) {
     const doc = descriptionList(result.target);

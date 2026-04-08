@@ -2,12 +2,26 @@
 
 import {Command} from "npm:commander";
 import {complete, insert, speech} from "./lib.ts";
-import {generate, hint, onyomi, translate} from "./actions.ts";
+import {ApplyOptions, generate, hint, onyomi, translate} from "./actions.ts";
 
 const cli = new Command();
 cli
   .description("A CLI for generating Japanese sentences using OpenAI's GPT-4o")
   .version("0.0.1");
+
+function query_apply(cli: Command, command: string, description: string, action: (query: string, options: ApplyOptions) => void) {
+  cli.command(command)
+    .description(description)
+    .option("-f, --force", "Overwrite existing translation")
+    .option("-n, --noop", "Non-destructive dry-run")
+    .argument("<query>", "query")
+    .action(action)
+}
+
+query_apply(cli, "generate", "Generate target sentence as definition list for matching notes", generate);
+query_apply(cli, "translate", "Add translation to details", translate);
+query_apply(cli, "hint", "Create hint from target", hint);
+query_apply(cli, "onyomi", "Convert hiragana to katakana", onyomi);
 
 const additional = `Use one line for the sentence and one line for the translation.`;
 
@@ -63,33 +77,6 @@ export const simple_sentence = (word: string) => complete(
   `Geef in eenvoudig Japans een herkenbare en specifieke voorbeeldzin, zonder persoonlijk voornaamwoord, met het woord: ${word}. Gebruik één regel voor de Japanse zin en één regel voor de Nederlandse vertaling.`,
 );
 
-cli.command("generate")
-  .description("Generate target sentence as definition list for matching notes")
-  .option("-f, --force", "Overwrite existing translation")
-  .option("-n, --noop", "Non-destructive dry-run")
-  .argument("<query>", "query")
-  .action(generate);
-
-cli.command("translate")
-  .description("Add translation to details")
-  .option("-f, --force", "Overwrite existing translation")
-  .option("-n, --noop", "Non-destructive dry-run")
-  .argument("<query>", "query")
-  .action(translate);
-
-cli.command("hint")
-  .description("Create hint from target")
-  .option("-f, --force", "Overwrite existing hint")
-  .option("-n, --noop", "Non-destructive dry-run")
-  .argument("<query>", "query")
-  .action(hint);
-
-cli.command("onyomi")
-  .description("Convert hiragana to katakana")
-  .option("-f, --force", "Overwrite existing hint")
-  .option("-n, --noop", "Non-destructive dry-run")
-  .argument("<query>", "query")
-  .action(onyomi);
 
 cli.command("kanjify")
   .description("Rewrite with kanji")
