@@ -8,13 +8,14 @@ export type ApplyOptions = {
   noop: boolean;
 };
 
+// use existing google speech generation
 export const generate_speech = async (query: string, options: any) => {
   const results = await anki_query(query, "target", "context");
 
   for (const result of results) {
     const doc = extractXPaths(dl(result.target), {dt: "/dl/dt"});
-    console.log(doc);
-    if (doc === undefined) {
+    if (doc === undefined || doc.dt.length < 2) {
+      console.log("Skipping empty target:", result.target);
       continue;
     }
   }
