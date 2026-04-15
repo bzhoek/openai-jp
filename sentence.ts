@@ -95,7 +95,7 @@ cli.command("tts")
   .requiredOption("-o, --output <file>", "output file")
   .action(async (sentence, opts) => {
     await speech(sentence, opts.output);
-    console.log(`Wrote ${sentence} to ${opts.output}`);
+    console.log("Wrote", sentence, "to", opts.output);
   });
 
 cli.command("split")

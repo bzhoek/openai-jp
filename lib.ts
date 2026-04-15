@@ -8,7 +8,7 @@ const openai = new OpenAI();
 const semaphore = new Semaphore(2);
 export const anki_post = async (action: string, params: any, noop = false, retries = 3, delay_ms = 1000) => {
   if (noop) {
-    console.log(`No-op "${action}" with params ${JSON.stringify(params)}`);
+    console.log("No-op", `"${action}"`, "with params", JSON.stringify(params));
     return;
   }
 
@@ -48,7 +48,7 @@ export async function anki_query(query: string, ...names: string[]) {
     }
     return result;
   });
-  console.debug(`matched ${results.length} notes`, results.map(n => n.id));
+  console.debug("Matched", results.length, "notes", results.map(n => n.id));
   return results;
 }
 
@@ -154,16 +154,16 @@ export const insert = async (csv: string) => {
   const words = csv
     .split(",")
     .filter((word) => is_all_kanji(word));
-  console.log("non-kana", words);
+  console.log("Non-kana", words);
 
   for (const word of words) {
     const id = await find_yomi_first(word);
     if (id === undefined) {
-      console.log(`No note found for ${word}`);
+      console.log("No note found for", word);
       const target = csv.replace(",", "");
       const placeholder = '・'.repeat(word.length);
       const hint = target.replace(word, placeholder);
-      console.log(`Try searching for ${hint}`);
+      console.log("Try searching for", hint);
       const add = {
         "note": {
           "deckName": "0-Inbox",
@@ -185,10 +185,10 @@ export const insert = async (csv: string) => {
       }
       console.log(add)
       post('addNote', add).then(json => {
-        console.log("added", word, json)
+        console.log("Added", word, json)
       })
     } else {
-      console.log(`Found note ${id} for ${word}`);
+      console.log("Found note", id, "for", word);
     }
   }
 };

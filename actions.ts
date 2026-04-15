@@ -43,7 +43,7 @@ export const generate_target = async (query: string, options: ApplyOptions) => {
         },
       },
     };
-    console.log("changes:", changes);
+    console.log("Changes:", changes);
     await anki_post("updateNote", changes, options.noop);
   }
 };
@@ -62,9 +62,9 @@ export const hint = async (query: string, options: any) => {
       const placeholder = "・".repeat(result.kanji.length);
       const hint = doc.dt.replace(result.kanji, placeholder).replace(/<i>.*/g, "")
         .trim();
-      console.log("kanji:", result.kanji, "hint: ", hint);
+      console.log("Kanji:", result.kanji, "hint: ", hint);
       const changes = { note: { id: result.id, fields: { hint: hint } } };
-      console.log("changes:", changes);
+      console.log("Changes:", changes);
       await anki_post("updateNote", changes, options.noop);
     }
   }
@@ -98,10 +98,10 @@ export const translate = async (query: string, options: any) => {
     console.log(doc);
     if (doc.dd.length > 1) {
       if (!options.force) {
-        console.log(`Skipping ${result.id} with translation "${doc.dd}"`)
+        console.log("Skipping", result.id, "with translation", doc.dd)
         continue
       }
-      console.log(`Overwriting ${result.id} with translation "${doc.dd}"`)
+      console.log("Overwriting", result.id, "with translation", doc.dd)
     }
 
     const changes = {
