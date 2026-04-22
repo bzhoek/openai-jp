@@ -101,22 +101,24 @@ export const word_break = async (query: string, options: any) => {
 
   with_dl_doc(results, async (result, doc) => {
     if (doc.dt.includes(ZWSP) && !options.force) {
-      console.error("Already segmented:", doc.dt);
+      console.warn("Already segmented:", doc.dt);
       return;
     }
 
-    if (doc.dt.length > 0 && (result.hint.length === 0 || options.force)) {
-      const clean = doc.dt.replaceAll(ZWSP, "");
-      const target = breaks.parse(clean).join(ZWSP);
-      const hint = hide_kanji(target, result.kanji);
-      const changes = {
-        target: `<dl><dt>${target}</dt><dd>${doc.dd}</dd></dl>`,
-        hint: hint
-      };
-      await update_fields(result.id, changes, options.noop);
+    if (doc.dt.length < 8 || options.force) {
+      console.warn("Skipping short:", doc.dt);
+      return;
     }
+    
+    const clean = doc.dt.replaceAll(ZWSP, "");
+    const target = breaks.parse(clean).join(ZWSP);
+    const hint = hide_kanji(target, result.kanji);
+    const changes = {
+      target: `<dl><dt>${target}</dt><dd>${doc.dd}</dd></dl>`,
+      hint: hint
+    };
+    await update_fields(result.id, changes, options.noop);
   });
-
 };
 
 function with_dl_doc(results: any, callback: (result: any, doc: any) => void) {
@@ -147,7 +149,7 @@ export const onyomi = async (query: string, options: any) => {
     
     const matches = result.kana.match(/^([^.]*)(\..*)?$/);
     const kana = matches[1];
-    const remainder = matches[2];
+    const remainder = matches[2] ?? "";
     
     let katakana = to_katakana(kana);
     // restore trailing な if also marked in meaning field
