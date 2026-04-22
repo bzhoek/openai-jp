@@ -1,7 +1,10 @@
 // deno-lint-ignore-file no-explicit-any
 import {anki_post, anki_query, complete, is_jukugo, to_katakana,} from "./lib.ts";
 import {dl, extractXPaths} from "./dom.ts";
-import {simple_sentence} from "./sentence.ts";
+
+export const simple_sentence = (word: string) => complete(
+  `Geef in eenvoudig Japans een herkenbare en specifieke voorbeeldzin, zonder persoonlijk voornaamwoord, met het woord: ${word}. Gebruik één regel voor de Japanse zin en één regel voor de Nederlandse vertaling.`,
+);
 
 export type ApplyOptions = {
   force: boolean;

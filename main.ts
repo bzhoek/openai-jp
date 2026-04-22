@@ -1,8 +1,16 @@
 #!/usr/bin/env deno -W=. -E=OPENAI_API_KEY,OPENAI_BASE_URL,OPENAI_ORG_ID,OPENAI_PROJECT_ID,OPENAI_WEBHOOK_SECRET,OPENAI_LOG,DEBUG,CLICOLOR_FORCE -N=api.openai.com:443,127.0.0.1:8765
 
 import {Command} from "npm:commander";
-import {complete, insert, speech} from "./lib.ts";
-import {ApplyOptions, generate_speech, generate_target, hint, onyomi, translate} from "./actions.ts";
+import {complete, insert, speech} from "./src/lib.ts";
+import {
+  ApplyOptions,
+  generate_speech,
+  generate_target,
+  hint,
+  onyomi,
+  simple_sentence,
+  translate
+} from "./src/actions.ts";
 
 const cli = new Command();
 cli
@@ -73,11 +81,6 @@ cli.command("simple")
     const completion = await simple_sentence(word);
     console.log(completion);
   });
-
-export const simple_sentence = (word: string) => complete(
-  `Geef in eenvoudig Japans een herkenbare en specifieke voorbeeldzin, zonder persoonlijk voornaamwoord, met het woord: ${word}. Gebruik één regel voor de Japanse zin en één regel voor de Nederlandse vertaling.`,
-);
-
 
 cli.command("kanjify")
   .description("Rewrite with kanji")
