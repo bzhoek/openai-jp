@@ -4,6 +4,7 @@
     "jsr:@std/async@*": "1.2.0",
     "npm:@xmldom/xmldom@*": "0.9.9",
     "npm:commander@*": "14.0.3",
+    "npm:commander@14": "14.0.3",
     "npm:openai@*": "6.33.0",
     "npm:xpath@*": "0.0.34"
   },
@@ -14,7 +15,8 @@
   },
   "npm": {
     "@xmldom/xmldom@0.9.9": {
-      "integrity": "sha512-qycIHAucxy/LXAYIjmLmtQ8q9GPnMbnjG1KXhWm9o5sCr6pOYDATkMPiTNa6/v8eELyqOQ2FsEqeoFYmgv/gJg=="
+      "integrity": "sha512-qycIHAucxy/LXAYIjmLmtQ8q9GPnMbnjG1KXhWm9o5sCr6pOYDATkMPiTNa6/v8eELyqOQ2FsEqeoFYmgv/gJg==",
+      "deprecated": true
     },
     "commander@14.0.3": {
       "integrity": "sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw=="
@@ -29,7 +31,8 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/assert@1"
+      "jsr:@std/assert@1",
+      "npm:commander@14"
     ]
   }
 }

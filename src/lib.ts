@@ -1,4 +1,4 @@
-import OpenAI from "npm:openai";
+import OpenAI from "openai";
 import {Buffer} from "node:buffer";
 import {delay} from "jsr:@std/async/delay";
 import {Semaphore} from "jsr:@std/async/unstable-semaphore";

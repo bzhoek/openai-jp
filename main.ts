@@ -1,7 +1,7 @@
 #!/usr/bin/env deno -W=. -E=OPENAI_API_KEY,OPENAI_BASE_URL,OPENAI_ORG_ID,OPENAI_PROJECT_ID,OPENAI_WEBHOOK_SECRET,OPENAI_LOG,DEBUG,CLICOLOR_FORCE -N=api.openai.com:443,127.0.0.1:8765
 // deno-lint-ignore-file no-explicit-any
 
-import {Command} from "npm:commander";
+import {Command} from "commander";
 import {complete, insert_onyomis, speech} from "./src/lib.ts";
 import {
   ApplyOptions,

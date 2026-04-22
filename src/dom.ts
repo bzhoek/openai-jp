@@ -1,5 +1,5 @@
-import {Document, DOMParser} from "npm:@xmldom/xmldom";
-import xpath from "npm:xpath";
+import {Document, DOMParser} from "xmldom";
+import xpath from "xpath";
 
 export function dl(value: string): string {
   if (value.startsWith("<dl>")) {
