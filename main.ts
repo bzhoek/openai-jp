@@ -14,8 +14,8 @@ import {
 
 const cli = new Command();
 cli
-  .description("A CLI for generating Japanese sentences using OpenAI's GPT-4o")
-  .version("0.0.1");
+  .description("A CLI for managing Anki and generate Japanese sentences using OpenAI's GPT-4o")
+  .version("0.0.2");
 
 const only_noop: ApplyOptions = {force: false, noop: true};
 const force_noop: ApplyOptions = {force: true, noop: true};
@@ -33,9 +33,9 @@ function query_apply(cli: Command, command: string, description: string, action:
   return subcmd
 }
 
-query_apply(cli, "inbox", "Move cards of matching notes to Inbox", inbox_notes, only_noop);
 query_apply(cli, "move", "Move cards to deck", move_cards, only_noop)
   .argument("<deck>", "Target deck")
+query_apply(cli, "inbox", "Move cards of matching notes to Inbox", inbox_notes, only_noop);
 
 query_apply(cli, "generate", "Generate target sentence as definition list", generate_target);
 query_apply(cli, "hint", "Create hint from target", hint);
