@@ -20,6 +20,22 @@ cli
 const only_noop: ApplyOptions = {force: false, noop: true};
 const force_noop: ApplyOptions = {force: true, noop: true};
 
+declare module 'npm:commander' {
+  interface Command {
+    sub_command(command: string, description: string): Command;
+  }
+}
+
+Command.prototype.sub_command = function (command: string, description: string) {
+  return cli.command(command)
+    .description(description)
+} 
+
+function sub_command(cli: Command, command: string, description: string) {
+  return cli.command(command)
+    .description(description)
+}
+
 function query_apply(cli: Command, command: string, description: string, action: (...args: any[]) => void, options: ApplyOptions = force_noop): Command {
   const subcmd = cli.command(command)
   subcmd
