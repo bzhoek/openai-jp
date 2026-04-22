@@ -24,6 +24,24 @@ export const generate_speech = async (query: string, options: any) => {
   }
 }
 
+export const inbox_notes = async (query: string, options: ApplyOptions) => {
+  const results = await anki_query(query);
+  for (const result of results) {
+    await move_cards(`nid:${result.id}`, "0-Inbox", options);
+  }
+};
+
+export const move_cards = async (query: string, deck: string, options: ApplyOptions) => {
+  const cards = await anki_post("findCards", {query: query});
+  if (cards.result) {
+    console.log("Matches", cards.result.length, "cards", cards.result);
+    const moved = await anki_post("changeDeck", {cards: cards.result, deck: deck}, options.noop);
+    if (cards.result.length > 0 && moved && moved.result == null) {
+      console.log("Moved", cards.result.length, "cards to", deck);
+    }
+  }
+};
+
 export const generate_target = async (query: string, options: ApplyOptions) => {
   const results = await anki_query(query, "kanji", "target");
   for (const result of results) {

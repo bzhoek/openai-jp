@@ -6,7 +6,7 @@ import {
   ApplyOptions,
   generate_speech,
   generate_target,
-  hint,
+  hint, inbox_notes, move_cards,
   onyomi,
   simple_sentence,
   translate
@@ -17,14 +17,25 @@ cli
   .description("A CLI for generating Japanese sentences using OpenAI's GPT-4o")
   .version("0.0.1");
 
-function query_apply(cli: Command, command: string, description: string, action: (query: string, options: ApplyOptions) => void) {
-  cli.command(command)
+const only_noop: ApplyOptions = {force: false, noop: true};
+const force_noop: ApplyOptions = {force: true, noop: true};
+
+function query_apply(cli: Command, command: string, description: string, action: (...args: any[]) => void, options: ApplyOptions = force_noop): Command {
+  const subcmd = cli.command(command)
+  subcmd
     .description(description)
-    .option("-f, --force", "Overwrite existing translation")
     .option("-n, --noop", "Non-destructive dry-run")
     .argument("<query>", "query")
     .action(action)
+  if (options.force) {
+    subcmd.option("-f, --force", "Overwrite existing translation")
+  }
+  return subcmd
 }
+
+query_apply(cli, "inbox", "Move cards of matching notes to Inbox", inbox_notes, only_noop);
+query_apply(cli, "move", "Move cards to deck", move_cards, only_noop)
+  .argument("<deck>", "Target deck")
 
 query_apply(cli, "generate", "Generate target sentence as definition list", generate_target);
 query_apply(cli, "hint", "Create hint from target", hint);
