@@ -17,13 +17,12 @@ export type ApplyOptions = {
 export const generate_speech = async (query: string, options: any) => {
   const results = await anki_query(query, "target", "context");
 
-  for (const result of results) {
-    const doc = extractXPaths(dl(result.target), {dt: "/dl/dt"});
+  with_dl_doc(results, async (result, doc) => {
     if (doc === undefined || doc.dt.length < 2) {
       console.log("Skipping empty target:", result.target);
-      continue;
+      return;
     }
-  }
+  });
 }
 
 export const inbox_notes = async (query: string, options: ApplyOptions) => {
@@ -46,33 +45,27 @@ export const move_cards = async (query: string, deck: string, options: ApplyOpti
 
 export const generate_target = async (query: string, options: ApplyOptions) => {
   const results = await anki_query(query, "kanji", "target");
-  for (const result of results) {
-    const doc = extractXPaths(dl(result.target), {dd: "/dl/dd"});
+  
+  with_dl_doc(results, async (result, doc) => {
     if (doc && doc.dd.length > 1) {
       if (!options.force) {
         console.log("Skipping existing target:", result.target);
-        continue;
+        return;
       }
       console.log("Forcing new target:", result.target);
     }
 
     const completion = await complete(simple_sentence(result.kanji));
     if (completion === null) {
-      continue;
+      return;
     }
-    
+
     const lines = completion.replace("。", "").split("\n");
-    const changes = {
-      note: {
-        id: result.id,
-        fields: {
-          target: `<dl><dt>${lines[0].trim()}</dt><dd>${lines[1]}</dd></dl>`,
-        },
-      },
+    const fields = {
+      target: `<dl><dt>${lines[0].trim()}</dt><dd>${lines[1]}</dd></dl>`,
     };
-    console.log("Changes:", changes);
-    await anki_post("updateNote", changes, options.noop);
-  }
+    await update_fields(result.id, fields, options.noop);
+  });
 };
 
 export const hint = async (query: string, options: any) => {
@@ -113,11 +106,11 @@ export const word_break = async (query: string, options: any) => {
     const clean = doc.dt.replaceAll(ZWSP, "");
     const target = breaks.parse(clean).join(ZWSP);
     const hint = hide_kanji(target, result.kanji);
-    const changes = {
+    const fields = {
       target: `<dl><dt>${target}</dt><dd>${doc.dd}</dd></dl>`,
       hint: hint
     };
-    await update_fields(result.id, changes, options.noop);
+    await update_fields(result.id, fields, options.noop);
   });
 };
 
@@ -166,33 +159,22 @@ export const onyomi = async (query: string, options: any) => {
 
 export const translate = async (query: string, options: any) => {
   const results = await anki_query(query, "target", "details");
-
-  for (const result of results) {
-    const doc = extractXPaths(dl(result.target), {dt: "/dl/dt", dd: "/dl/dd"});
-    if (doc === undefined) {
-      continue;
-    }
-
-    console.log(doc);
+  
+  with_dl_doc(results, async (result, doc) => {
     if (doc.dd.length > 1) {
       if (!options.force) {
         console.log("Skipping", result.id, "with translation", doc.dd)
-        continue
+        return;
       }
       console.log("Overwriting", result.id, "with translation", doc.dd)
     }
 
-    const changes = {
-      note: {
-        id: result.id,
-        fields: {},
-      },
-    };
+    const fields = {}
     const details = result.details.split("<br>")
-    let translation = "";
+    let translation: string;
     if (result.details.startsWith(doc.dd) && details.length >= 2) {
       translation = result.details.split("<br>")[1];
-      Object.assign(changes.note.fields, {details: ""});
+      Object.assign(fields, {details: ""});
     } else {
       console.error("Cannot use details", result.id, result.details);
       translation = await complete(
@@ -200,9 +182,7 @@ export const translate = async (query: string, options: any) => {
       ) ?? "";
     }
 
-    Object.assign(changes.note.fields, {target: `<dl><dt>${doc.dt}</dt><dd>${translation}</dd></dl>`});
-    console.log(changes);
-    const update = await anki_post("updateNote", changes, options.noop);
-    console.log(update);
-  }
+    Object.assign(fields, {target: `<dl><dt>${doc.dt}</dt><dd>${translation}</dd></dl>`});
+    await update_fields(result.id, fields, options.noop);
+  });
 }
