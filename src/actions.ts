@@ -2,9 +2,8 @@
 import {anki_post, anki_query, complete, is_jukugo, to_katakana, update_fields,} from "./lib.ts";
 import {dl, extractXPaths} from "./dom.ts";
 
-export const simple_sentence = (word: string) => complete(
-  `Geef in eenvoudig Japans een herkenbare en specifieke voorbeeldzin, zonder persoonlijk voornaamwoord, met het woord: ${word}. Gebruik één regel voor de Japanse zin en één regel voor de Nederlandse vertaling.`,
-);
+export const simple_sentence = (word: string) => 
+  `Geef in eenvoudig Japans een herkenbare en specifieke voorbeeldzin, zonder persoonlijk voornaamwoord, met het woord: ${word}. Gebruik één regel voor de Japanse zin en één regel voor de Nederlandse vertaling.`;
 
 export type ApplyOptions = {
   force: boolean;
@@ -54,7 +53,7 @@ export const generate_target = async (query: string, options: ApplyOptions) => {
       console.log("Forcing new target:", result.target);
     }
 
-    const completion = await simple_sentence(result.kanji);
+    const completion = await complete(simple_sentence(result.kanji));
     if (completion === null) {
       continue;
     }

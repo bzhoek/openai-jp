@@ -1,7 +1,8 @@
 #!/usr/bin/env deno -W=. -E=OPENAI_API_KEY,OPENAI_BASE_URL,OPENAI_ORG_ID,OPENAI_PROJECT_ID,OPENAI_WEBHOOK_SECRET,OPENAI_LOG,DEBUG,CLICOLOR_FORCE -N=api.openai.com:443,127.0.0.1:8765
+// deno-lint-ignore-file no-explicit-any
 
 import {Command} from "npm:commander";
-import {complete, insert, speech} from "./src/lib.ts";
+import {complete, insert_onyomis, speech} from "./src/lib.ts";
 import {
   ApplyOptions,
   generate_speech,
@@ -17,29 +18,14 @@ cli
   .description("A CLI for managing Anki and generate Japanese sentences using OpenAI's GPT-4o")
   .version("0.0.2");
 
+function sub_command(command: string, description: string) {
+  return cli.command(command).description(description)
+}
+
 const only_noop: ApplyOptions = {force: false, noop: true};
 const force_noop: ApplyOptions = {force: true, noop: true};
-
-declare module 'npm:commander' {
-  interface Command {
-    sub_command(command: string, description: string): Command;
-  }
-}
-
-Command.prototype.sub_command = function (command: string, description: string) {
-  return cli.command(command)
-    .description(description)
-} 
-
-function sub_command(cli: Command, command: string, description: string) {
-  return cli.command(command)
-    .description(description)
-}
-
-function query_apply(cli: Command, command: string, description: string, action: (...args: any[]) => void, options: ApplyOptions = force_noop): Command {
-  const subcmd = cli.command(command)
-  subcmd
-    .description(description)
+function query_apply(command: string, description: string, action: (...args: any[]) => void, options: ApplyOptions = force_noop): Command {
+  const subcmd = sub_command(command, description)
     .option("-n, --noop", "Non-destructive dry-run")
     .argument("<query>", "query")
     .action(action)
@@ -49,75 +35,64 @@ function query_apply(cli: Command, command: string, description: string, action:
   return subcmd
 }
 
-query_apply(cli, "move", "Move cards to deck", move_cards, only_noop)
+query_apply("move", "Move cards to deck", move_cards, only_noop)
   .argument("<deck>", "Target deck")
-query_apply(cli, "inbox", "Move cards of matching notes to Inbox", inbox_notes, only_noop);
+query_apply("inbox", "Move cards of matching notes to Inbox", inbox_notes, only_noop);
 
-query_apply(cli, "generate", "Generate target sentence as definition list", generate_target);
-query_apply(cli, "hint", "Create hint from target", hint);
-query_apply(cli, "onyomi", "Convert hiragana to katakana", onyomi);
-query_apply(cli, "speech", "Add speech from target in context", generate_speech);
-query_apply(cli, "translate", "Add translation to target as definition", translate);
+query_apply("generate", "Generate target sentence as definition list", generate_target);
+query_apply("hint", "Create hint from target", hint);
+query_apply("onyomi", "Convert hiragana to katakana", onyomi);
+query_apply("speech", "Add speech from target in context", generate_speech);
+query_apply("translate", "Add translation to target as definition", translate);
+
+
+function prompt_apply(command: string, description: string, transform: (...args: any[]) => string): Command {
+  return sub_command(command, description)
+    .action(async (args) => {
+      const completion = await complete(transform(args));
+      console.log(completion);
+    })
+}
+
+const prompt_verb = (command: string, description: string, transform: (...args: any[]) => string) =>
+  prompt_apply(command, description, transform)
+    .argument("<verb>", "verb")
+
+prompt_verb("it", "Intransitive pair of verb", (verb) =>
+  `beantwoord met ja of nee of er een 自動詞 van ${verb} bestaat en wat dat woord is`,
+)
+
+prompt_verb("tt", "Transitive pair of verb", (verb) =>
+  `beantwoord met ja of nee of er een 他動詞 van ${verb} bestaat en wat dat woord is`
+)
+
+const prompt_word = (command: string, description: string, transform: (...args: any[]) => string) =>
+  prompt_apply(command, description, transform)
+    .argument("<word>", "word");
 
 const additional = `Use one line for the sentence and one line for the translation.`;
+prompt_word("daily", "An everyday short sentence", (word) =>
+  `Give an everyday short sentence (without pronouns) in Japanese kanji that uses the word ${word} in a common way. ${additional}`
+)
 
-cli.command("it")
-  .description("Intransitive pair of verb")
-  .argument("<verb>", "verb")
-  .action(async (verb) => {
-    const completion = await complete(
-      `beantwoord met ja of nee of er een 自動詞 van ${verb} bestaat en wat dat woord is`,
-    );
-    console.log(completion);
-  });
+prompt_word("memo", "An everyday short sentence", (word) =>
+  `Suggest a short and memorable Japanese sentence (without pronouns) with kanji that uses the word ${word} in a typical way. ${additional}`
+)
 
-cli.command("tt")
-  .description("Transitive pair of verb")
-  .argument("<verb>", "verb")
-  .action(async (verb) => {
-    const completion = await complete(
-      `beantwoord met ja of nee of er een 他動詞 van ${verb} bestaat en wat dat woord is`,
-    );
-    console.log(completion);
-  });
+prompt_word("simple", "A simple sentence", simple_sentence);
 
-cli.command("daily")
-  .description("An everyday short sentence")
-  .argument("<word>", "word")
-  .action(async (word) => {
-    const completion = await complete(
-      `Give an everyday short sentence (without pronouns) in Japanese kanji that uses the word ${word} in a common way. ${additional}`,
-    );
-    console.log(completion);
-  });
+const prompt_sentence = (command: string, description: string, transform: (...args: any[]) => string) =>
+  prompt_apply(command, description, transform)
+    .argument("<sentence>", "sentence")
 
-cli.command("memo")
-  .description("A memorable short sentence")
-  .argument("<word>", "word")
-  .action(async (word) => {
-    const completion = await complete(
-      `Suggest a short and memorable Japanese sentence (without pronouns) with kanji that uses the word ${word} in a typical way. ${additional}`,
-    );
-    console.log(completion);
-  });
+prompt_sentence("kanjify", "Rewrite with kanji", (sentence) =>
+  `Rewrite with kanji ${sentence}`
+)
 
-cli.command("simple")
-  .description("A simple sentence")
-  .argument("<word>", "word")
-  .action(async (word) => {
-    const completion = await simple_sentence(word);
-    console.log(completion);
-  });
+prompt_sentence("split", "Split sentence into comma-separated words", (sentence) =>
+  `Split the sentence "${sentence}" into separate words and only respond with the CSV`,
+)
 
-cli.command("kanjify")
-  .description("Rewrite with kanji")
-  .argument("<sentence>", "sentence")
-  .action(async (sentence) => {
-    const completion = await complete(
-      `rewrite with kanji ${sentence}`,
-    );
-    console.log(completion);
-  });
 
 cli.command("tts")
   .description("Save sentence as audio")
@@ -128,20 +103,12 @@ cli.command("tts")
     console.log("Wrote", sentence, "to", opts.output);
   });
 
-cli.command("split")
-  .description("Split sentence into comma-separated words")
-  .argument("<sentence>", "sentence")
-  .action(async (sentence) => {
-    const completion = await complete(
-      `Split the sentence "${sentence}" into separate words and only respond with the CSV`,
-    );
-    console.log(completion);
-  });
-
+// TODO: this is not functional
 cli.command("insert")
-  .argument("<words>", "sentence")
+  .description("Insert missing On'yomi notes from list of words")
+  .argument("<words>", "Words as comma-separated list")
   .action(async (words) => {
-    await insert(words);
+    await insert_onyomis(words);
   });
 
 cli.parse();

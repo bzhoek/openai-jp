@@ -166,7 +166,7 @@ const is_all_kana = (word: string) => Array.from(word).filter(is_hiragana).lengt
 const is_all = (word: string, filter: any) => Array.from(word).filter(filter).length === word.length;
 const is_all_kanji = (word: string) => is_all(word, is_kanji);
 
-export const insert = async (csv: string) => {
+export const insert_onyomis = async (csv: string) => {
   const words = csv
     .split(",")
     .filter((word) => is_all_kanji(word));
