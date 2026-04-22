@@ -5,6 +5,22 @@ import {Semaphore} from "jsr:@std/async/unstable-semaphore";
 
 const openai = new OpenAI();
 
+export const update_fields = (id: number, fields: any, noop = false) => {
+  if (noop) {
+    console.log("No-op updateNote", id, "with fields", fields);
+    return;
+  }
+
+  const changes = {
+    note: {
+      id: id,
+      fields: fields,
+    },
+  };
+  
+  return anki_post("updateNote", changes, noop);
+}
+
 const semaphore = new Semaphore(2);
 export const anki_post = async (action: string, params: any, noop = false, retries = 3, delay_ms = 1000) => {
   if (noop) {
@@ -41,14 +57,14 @@ export const anki_post = async (action: string, params: any, noop = false, retri
 export async function anki_query(query: string, ...names: string[]) {
   const ids = await anki_post("findNotes", { query: query });
   const notes = await anki_post("notesInfo", { notes: ids.result });
-  const results = notes.result.map((note) => {
+  const results = notes.result.map((note: any) => {
     const result: any = Object.assign({}, { id: note.noteId });
     for (const name of names) {
       result[name] = note.fields[name].value.trim();
     }
     return result;
   });
-  console.debug("Matched", results.length, "notes", results.map(n => n.id));
+  console.debug("Matched", results.length, "notes", results.map((n: { id: number }) => n.id));
   return results;
 }
 
@@ -64,7 +80,7 @@ export const complete = async (prompt: string) => {
   return completion.choices[0].message.content;
 };
 
-export const is_jukugo = (word) => {
+export const is_jukugo = (word: string) => {
   let clean = word.split(".")[0].trim()
 
   let kanji = Array.from(clean)
@@ -102,14 +118,14 @@ export const to_katakana = (word: string): string => {
     }).join('')
 }
 
-const post = async (action: string, params) => {
+const post = async (action: string, params: any) => {
   const request = {
     action: action,
     version: 6,
     params: params,
   };
 
-  await delay();
+  await delay(300);
   return fetch("http://127.0.0.1:8765", {
     method: "post",
     body: JSON.stringify(request),
@@ -147,7 +163,7 @@ const is_katakana = (char: string) => char >= "ァ" && char <= "ワ"; // 0x30A1 
 
 const is_single_kana = (word: string) => word.length === 1 && is_hiragana(word);
 const is_all_kana = (word: string) => Array.from(word).filter(is_hiragana).length === word.length;
-const is_all = (word: string, filter) => Array.from(word).filter(filter).length === word.length;
+const is_all = (word: string, filter: any) => Array.from(word).filter(filter).length === word.length;
 const is_all_kanji = (word: string) => is_all(word, is_kanji);
 
 export const insert = async (csv: string) => {

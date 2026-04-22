@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import {anki_post, anki_query, complete, is_jukugo, to_katakana,} from "./lib.ts";
+import {anki_post, anki_query, complete, is_jukugo, to_katakana, update_fields,} from "./lib.ts";
 import {dl, extractXPaths} from "./dom.ts";
 
 export const simple_sentence = (word: string) => complete(
@@ -122,9 +122,7 @@ export const onyomi = async (query: string, options: any) => {
     katakana += remainder;
     
     if (katakana != result.kana || options.force) {
-      const changes = { note: { id: result.id, fields: { kana: katakana } } };
-      console.log(changes);
-      await anki_post("updateNote", changes, options.noop);
+      await update_fields(result.id, {kana: katakana}, options.noop);
     }
   }
 };
