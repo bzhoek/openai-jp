@@ -55,6 +55,10 @@ export const generate_target = async (query: string, options: ApplyOptions) => {
     }
 
     const completion = await simple_sentence(result.kanji);
+    if (completion === null) {
+      continue;
+    }
+    
     const lines = completion.replace("。", "").split("\n");
     const changes = {
       note: {
@@ -98,7 +102,7 @@ export const onyomi = async (query: string, options: any) => {
     if (!is_jukugo(result.kanji)) {
       continue
     }
-    let katakana = to_katakana(result.kana);
+    const katakana = to_katakana(result.kana);
     if (katakana != result.kana || options.force) {
       const changes = { note: { id: result.id, fields: { kana: katakana } } };
       console.log(changes);
