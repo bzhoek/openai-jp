@@ -96,13 +96,31 @@ export const hint = async (query: string, options: any) => {
 };
 
 export const onyomi = async (query: string, options: any) => {
-  const results = await anki_query(query, "kana", "kanji");
+  const results = await anki_query(query, "kana", "kanji", "meaning");
 
   for (const result of results) {
-    if (!is_jukugo(result.kanji)) {
+    let kanji = result.kanji;
+    // remove trailing な if also marked in meaning field
+    if (result.meaning.includes("な") && kanji.endsWith("な")) {
+      kanji = kanji.slice(0, -1);
+    }
+    
+    if (!is_jukugo(kanji)) {
+      console.warn("Not jukugo", kanji);
       continue
     }
-    const katakana = to_katakana(result.kana);
+    
+    const matches = result.kana.match(/^([^.]*)(\..*)?$/);
+    const kana = matches[1];
+    const remainder = matches[2];
+    
+    let katakana = to_katakana(kana);
+    // restore trailing な if also marked in meaning field
+    if (result.meaning.includes("な") && kana.endsWith("な")) {
+      katakana = katakana.slice(0, -1) + "な";
+    }
+    katakana += remainder;
+    
     if (katakana != result.kana || options.force) {
       const changes = { note: { id: result.id, fields: { kana: katakana } } };
       console.log(changes);
