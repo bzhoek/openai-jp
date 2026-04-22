@@ -11,6 +11,7 @@ export const update_fields = (id: number, fields: any, noop = false) => {
     return;
   }
 
+  console.log("Update note", id, "with fields", fields);
   const changes = {
     note: {
       id: id,

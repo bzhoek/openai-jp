@@ -10,7 +10,7 @@ import {
   hint, inbox_notes, move_cards,
   onyomi,
   simple_sentence,
-  translate
+  translate, word_break
 } from "./src/actions.ts";
 
 const cli = new Command();
@@ -44,7 +44,7 @@ query_apply("hint", "Create hint from target", hint);
 query_apply("onyomi", "Convert hiragana to katakana", onyomi);
 query_apply("speech", "Add speech from target in context", generate_speech);
 query_apply("translate", "Add translation to target as definition", translate);
-
+query_apply("break", "Add zero-width spaces to target", word_break);
 
 function prompt_apply(command: string, description: string, transform: (...args: any[]) => string): Command {
   return sub_command(command, description)

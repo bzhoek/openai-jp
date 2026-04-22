@@ -4,6 +4,7 @@
     "commander": "npm:commander@14.0",
     "openai": "npm:openai@6.33",
     "xmldom": "npm:@xmldom/xmldom@0.9.9",
-    "xpath": "npm:xpath@0.0.34"
+    "xpath": "npm:xpath@0.0.34",
+    "budoux": "npm:budoux@0.8.1"
   }
 }

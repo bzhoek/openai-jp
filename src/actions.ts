@@ -1,6 +1,9 @@
 // deno-lint-ignore-file no-explicit-any
+import {loadDefaultJapaneseParser} from "budoux";
 import {anki_post, anki_query, complete, is_jukugo, to_katakana, update_fields,} from "./lib.ts";
 import {dl, extractXPaths} from "./dom.ts";
+
+const breaks = loadDefaultJapaneseParser();
 
 export const simple_sentence = (word: string) => 
   `Geef in eenvoudig Japans een herkenbare en specifieke voorbeeldzin, zonder persoonlijk voornaamwoord, met het woord: ${word}. Gebruik één regel voor de Japanse zin en één regel voor de Nederlandse vertaling.`;
@@ -75,24 +78,57 @@ export const generate_target = async (query: string, options: ApplyOptions) => {
 export const hint = async (query: string, options: any) => {
   const results = await anki_query(query, "kanji", "target", "hint");
 
+  with_dl_doc(results, async (result, doc) => {
+    if (doc.dt.length > 0 && (result.hint.length === 0 || options.force)) {
+      const hint = hide_kanji(doc.dt, result.kanji);
+      await update_fields(result.id, {hint: hint}, options.noop);
+    }
+  });
+};
+
+function hide_kanji(sentence: string, kanji: string): string {
+  const placeholder = "・".repeat(kanji.length);
+  return sentence
+    .replace(kanji, placeholder)
+    .replace(/<i>.*/g, "")
+    .trim();
+}
+
+const ZWSP = "\u200B"; // zero-width space
+
+export const word_break = async (query: string, options: any) => {
+  const results = await anki_query(query, "kanji", "target", "hint");
+
+  with_dl_doc(results, async (result, doc) => {
+    if (doc.dt.includes(ZWSP) && !options.force) {
+      console.error("Already segmented:", doc.dt);
+      return;
+    }
+
+    if (doc.dt.length > 0 && (result.hint.length === 0 || options.force)) {
+      const clean = doc.dt.replaceAll(ZWSP, "");
+      const target = breaks.parse(clean).join(ZWSP);
+      const hint = hide_kanji(target, result.kanji);
+      const changes = {
+        target: `<dl><dt>${target}</dt><dd>${doc.dd}</dd></dl>`,
+        hint: hint
+      };
+      await update_fields(result.id, changes, options.noop);
+    }
+  });
+
+};
+
+function with_dl_doc(results: any, callback: (result: any, doc: any) => void) {
   for (const result of results) {
-    const doc = extractXPaths(dl(result.target), {dt: "/dl/dt"});
+    const doc = extractXPaths(dl(result.target), {dt: "/dl/dt", dd: "/dl/dd"});
     if (doc === undefined) {
       console.error("Cannot parse:", result.target);
       continue;
     }
-
-    if (doc.dt.length > 0 && (result.hint.length === 0 || options.force)) {
-      const placeholder = "・".repeat(result.kanji.length);
-      const hint = doc.dt.replace(result.kanji, placeholder).replace(/<i>.*/g, "")
-        .trim();
-      console.log("Kanji:", result.kanji, "hint: ", hint);
-      const changes = { note: { id: result.id, fields: { hint: hint } } };
-      console.log("Changes:", changes);
-      await anki_post("updateNote", changes, options.noop);
-    }
+    callback(result, doc);
   }
-};
+}
 
 export const onyomi = async (query: string, options: any) => {
   const results = await anki_query(query, "kana", "kanji", "meaning");
